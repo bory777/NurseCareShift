@@ -1,11 +1,17 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
+import { useAuth } from './AuthContext'; // AuthContextを使用
 
 const ProtectedRoute: React.FC = () => {
-  const token = localStorage.getItem('token'); // JWTトークンの取得
+  const { token } = useAuth(); // ログイン状態を取得
 
-  // トークンが存在しない場合はログインページにリダイレクト
-  return token ? <Outlet /> : <Navigate to="/login" />;
+  // トークンがなければログインページにリダイレクト
+  if (!token) {
+    return <Navigate to="/login" />;
+  }
+
+  // トークンがあれば、保護されたコンテンツを表示
+  return <Outlet />;
 };
 
 export default ProtectedRoute;

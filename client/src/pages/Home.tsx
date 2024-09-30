@@ -4,25 +4,13 @@ import { Link } from 'react-router-dom';
 const Home: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col">
-      {/* ヘッダー */}
-      <header className="bg-blue-100 shadow-md py-4">
-        <div className="container mx-auto flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-blue-600">NurseCareShift</h1>
-          <nav>
-            <Link to="/login" className="text-blue-400 hover:text-blue-500 font-semibold">
-              ログイン
-            </Link>
-          </nav>
-        </div>
-      </header>
-
       {/* メインセクション */}
       <div className="relative flex-1">
         {/* 背景画像 */}
         <img
           src="https://via.placeholder.com/1920x1080"
           alt="Nurse working"
-          className="w-full h-full object-cover"
+          className="w-full h-[80vh] object-cover"
         />
 
         {/* コンテンツセクション */}

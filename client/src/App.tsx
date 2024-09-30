@@ -4,23 +4,29 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
+import { AuthProvider } from './components/AuthContext';
+import Navbar from './components/Navbar';
 
 const App: React.FC = () => {
   return (
-    <Router>
-      <Routes>
-        {/* ホームページ */}
-        <Route path="/" element={<Home />} />
+    <AuthProvider>
+      <Router>
+        <div>
+          {/* ナビゲーションバーを全ページで表示 */}
+          <Navbar />
+          <Routes>
+            {/* ホームページとログインページ */}
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
 
-        {/* ログインページ */}
-        <Route path="/login" element={<Login />} />
-
-        {/* 保護されたルート（ダッシュボード） */}
-        <Route element={<ProtectedRoute />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-        </Route>
-      </Routes>
-    </Router>
+            {/* 認証が必要なルート (ProtectedRoute) */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/dashboard" element={<Dashboard />} />
+            </Route>
+          </Routes>
+        </div>
+      </Router>
+    </AuthProvider>
   );
 };
 

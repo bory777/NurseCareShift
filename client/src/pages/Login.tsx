@@ -1,4 +1,3 @@
-// src/pages/Login.tsx (フロントエンドの修正)
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -8,12 +7,20 @@ const Login: React.FC = () => {
   const [error, setError] = useState<string | null>(null); // エラーメッセージ用の状態
   const navigate = useNavigate(); // ナビゲーション用フック
 
-  // フォーム送信時のハンドラ
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null); // エラーメッセージをリセット
 
+    // フォームのバリデーション
+    if (!email || !password) {
+      setError('メールアドレスとパスワードを入力してください。');
+      return;
+    }
+
     try {
+      // デバッグ用: ログインリクエスト送信前にログ出力
+      console.log('ログインリクエスト送信中: ', { email, password });
+
       // バックエンドAPIへのログインリクエスト
       const response = await fetch('http://localhost:8000/api/login', {
         method: 'POST',
@@ -23,6 +30,9 @@ const Login: React.FC = () => {
         body: JSON.stringify({ email, password }), // リクエストボディにメールアドレスとパスワードを送信
       });
 
+      // デバッグ用: レスポンスのステータスコードを確認
+      console.log('レスポンスステータス: ', response.status);
+
       // レスポンスがOKでない場合エラーを投げる
       if (!response.ok) {
         const errorData = await response.json(); // APIからのエラーメッセージを取得
@@ -31,13 +41,19 @@ const Login: React.FC = () => {
 
       // 正常なレスポンスが返ってきた場合
       const data = await response.json();
+      
+      console.log('ログイン成功: ', data); // デバッグ用ログ
+      
       localStorage.setItem('token', data.token); // JWTトークンをlocalStorageに保存
 
+      // デバッグ用: リダイレクト前に確認
+      console.log('ダッシュボードへリダイレクト中');
+
       // ログイン成功後にダッシュボードへリダイレクト
-      navigate('/dashboard');
+      await navigate('/dashboard'); // navigate に await を追加して処理を待つ
     } catch (err: any) {
-      // エラーメッセージを表示
-      setError(err.message);
+      console.error('エラーが発生しました:', err); // エラー内容をコンソールに出力
+      setError(err.message); // エラーメッセージを表示
     }
   };
 
