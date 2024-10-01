@@ -2,11 +2,25 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../components/AuthContext';
 import LogoutButton from '../components/LogoutButton';
+import { Carousel } from 'react-responsive-carousel';
+import { FaCheckCircle, FaRedoAlt } from 'react-icons/fa';
+import 'react-responsive-carousel/lib/styles/carousel.min.css';
+
+const genres = [
+  { name: '血圧', link: '/articles/blood-pressure' },
+  { name: '呼吸', link: '/articles/respiration' },
+  { name: '脳神経', link: '/articles/neurology' },
+  { name: '心拍数', link: '/articles/heart-rate' },
+  { name: '体温', link: '/articles/body-temperature' },
+  // 他のジャンルも追加可能
+];
 
 const Dashboard: React.FC = () => {
   const [profile, setProfile] = useState<{ id: number; email: string } | null>(null);
+  const [understoodArticles, setUnderstoodArticles] = useState<number>(10); // 理解した記事数
+  const [reviewArticles, setReviewArticles] = useState<number>(5); // 復習したい記事数
   const [error, setError] = useState<string | null>(null);
-  const { token } = useAuth(); // AuthContextからトークンを取得
+  const { token } = useAuth();
 
   useEffect(() => {
     if (!token) {
@@ -14,12 +28,12 @@ const Dashboard: React.FC = () => {
       return;
     }
 
-    // 認証が必要なAPIにリクエストを送信
+    // プロフィール取得のAPIリクエスト
     fetch('http://localhost:8000/api/profile', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`, // トークンをAuthorizationヘッダーに付与
+        Authorization: `Bearer ${token}`,
       },
     })
       .then((response) => {
@@ -37,19 +51,95 @@ const Dashboard: React.FC = () => {
   }, [token]);
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center bg-gray-100">
-      <div className="bg-white p-6 rounded shadow-md w-full max-w-sm">
-        <h2 className="text-2xl font-bold text-blue-600 mb-6 text-center">ダッシュボード</h2>
-        {error && <p className="text-red-500 mb-4">{error}</p>}
-        {profile ? (
-          <div>
-            <p>ユーザーID: {profile.id}</p>
-            <p>メールアドレス: {profile.email}</p>
-            <LogoutButton /> {/* ログアウトボタンを追加 */}
+    <div className="min-h-screen flex flex-col items-center bg-blue-50 p-10">
+      <div className="w-full max-w-6xl">
+        <h2 className="text-3xl font-bold text-blue-600 mb-8 text-center">ダッシュボード</h2>
+
+        {/* ユーザーIDと進捗状況のカード */}
+        <div className="flex w-full space-x-6">
+          {/* 左側: ユーザープロフィールカード */}
+          <div className="w-1/3 bg-white p-8 rounded-lg shadow-lg text-center">
+            <h3 className="text-2xl font-semibold text-gray-700">ユーザープロフィール</h3>
+            {error && <p className="text-red-500 mb-4">{error}</p>}
+            {profile ? (
+              <div className="space-y-6 mt-4">
+                <p className="text-lg font-medium text-gray-700">ユーザーID: {profile.id}</p>
+
+                {/* 理解した記事数 */}
+                <div className="flex items-center justify-center bg-blue-100 p-4 rounded-lg shadow-md">
+                  <FaCheckCircle className="text-blue-500 text-3xl mr-2" />
+                  <p className="text-2xl font-bold text-blue-500">理解した: {understoodArticles}</p>
+                </div>
+
+                {/* 復習したい記事数 */}
+                <div className="flex items-center justify-center bg-yellow-100 p-4 rounded-lg shadow-md">
+                  <FaRedoAlt className="text-yellow-500 text-3xl mr-2" />
+                  <p className="text-2xl font-bold text-yellow-500">復習したい: {reviewArticles}</p>
+                </div>
+
+                {/* ログアウトボタン */}
+                <div className="mt-6">
+                  <LogoutButton />
+                </div>
+              </div>
+            ) : (
+              !error && <p>プロフィールを読み込み中...</p>
+            )}
           </div>
-        ) : (
-          !error && <p>プロフィールを読み込み中...</p>
-        )}
+
+          {/* 右側: 進捗状況のカード */}
+          <div className="w-2/3 bg-white p-8 rounded-lg shadow-lg">
+            <h3 className="text-2xl font-semibold text-gray-700 text-center mb-6">進捗状況</h3>
+            <div className="space-y-4">
+              {/* 診療科別の進捗バー */}
+              <div>
+                <p className="text-lg font-semibold text-gray-700">外科</p>
+                <div className="w-full bg-gray-300 rounded-full h-4">
+                  <div className="bg-blue-500 h-4 rounded-full" style={{ width: '60%' }}></div>
+                </div>
+                <p className="text-right text-gray-500 text-sm mt-1">60% 完了</p>
+              </div>
+
+              <div>
+                <p className="text-lg font-semibold text-gray-700">内科</p>
+                <div className="w-full bg-gray-300 rounded-full h-4">
+                  <div className="bg-blue-500 h-4 rounded-full" style={{ width: '40%' }}></div>
+                </div>
+                <p className="text-right text-gray-500 text-sm mt-1">40% 完了</p>
+              </div>
+
+              <div>
+                <p className="text-lg font-semibold text-gray-700">小児科</p>
+                <div className="w-full bg-gray-300 rounded-full h-4">
+                  <div className="bg-blue-500 h-4 rounded-full" style={{ width: '80%' }}></div>
+                </div>
+                <p className="text-right text-gray-500 text-sm mt-1">80% 完了</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* カルーセル部分 */}
+        <div className="mt-12 w-full">
+          <Carousel
+            showArrows={false}
+            showThumbs={false}
+            infiniteLoop
+            centerMode
+            centerSlidePercentage={20} // 5つ表示
+            autoPlay
+            interval={3000}
+            transitionTime={500}
+          >
+            {genres.map((genre) => (
+              <div key={genre.name} className="p-4">
+                <a href={genre.link} className="block bg-gray-200 p-6 rounded-lg shadow-md hover:bg-blue-200">
+                  <p className="text-xl font-semibold text-gray-700">{genre.name}</p>
+                </a>
+              </div>
+            ))}
+          </Carousel>
+        </div>
       </div>
     </div>
   );

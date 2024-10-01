@@ -4,6 +4,7 @@ import { useAuth } from './AuthContext'; // AuthContextを使用
 
 const ProtectedRoute: React.FC = () => {
   const { token } = useAuth(); // ログイン状態を取得
+  console.log('ProtectedRoute - トークン確認: ', token);
 
   // トークンがなければログインページにリダイレクト
   if (!token) {

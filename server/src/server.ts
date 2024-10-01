@@ -76,18 +76,20 @@ app.post('/api/login', (req: Request<{}, {}, LoginRequestBody>, res: Response) =
 
 // JWT認証用のミドルウェア
 const verifyToken = (req: Request, res: Response, next: NextFunction) => {
-  // ヘッダーからトークンを取得
-  const token = req.headers['authorization']?.split(' ')[1]; // Bearerトークン形式の場合
+  const token = req.headers['authorization']?.split(' ')[1];
+  
   if (!token) {
+    console.log('トークンがありません');
     return res.status(403).send({ message: 'トークンが提供されていません' });
   }
 
-  // トークンの検証
   jwt.verify(token, SECRET_KEY, (err, decoded) => {
     if (err) {
+      console.log('トークンの認証に失敗しました', err);
       return res.status(500).send({ message: 'トークンの認証に失敗しました' });
     }
-    req.userId = (decoded as { id: number }).id; // 型アサーションでトークンからユーザーIDを取得
+    req.userId = (decoded as { id: number }).id;
+    console.log('トークンの検証に成功しました');
     next();
   });
 };

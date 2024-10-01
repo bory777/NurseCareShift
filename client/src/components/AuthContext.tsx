@@ -31,13 +31,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const login = (newToken: string) => {
-    localStorage.setItem('token', newToken); // ログイン時にトークンを保存
-    setToken(newToken); // 状態も更新
+    localStorage.setItem('token', newToken);
+    setToken(newToken);
   };
 
   const logout = () => {
-    localStorage.removeItem('token'); // ログアウト時にトークンを削除
-    setToken(null); // 状態もリセット
+    localStorage.removeItem('token');
+    setToken(null);
   };
 
   return (

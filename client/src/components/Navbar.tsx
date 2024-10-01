@@ -1,35 +1,34 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from './AuthContext'; // AuthContextを使用
+import { useAuth } from './AuthContext';
+import LogoutButton from './LogoutButton';
 
 const Navbar: React.FC = () => {
-  const { token, logout } = useAuth(); // ログイン状態とログアウト関数を取得
+  const { token } = useAuth(); // ログイン状態を取得
 
   return (
-    <nav className="bg-blue-600 p-4 text-white">
+    <nav className="bg-blue-100 p-4 text-blue-500">
       <div className="container mx-auto flex justify-between items-center">
         <div>
-          <Link to="/" className="text-white font-bold text-lg">
+          <Link to="/" className="text-blue-600 font-bold text-3xl">
             NurseCareShift
           </Link>
         </div>
         <div>
-          <Link to="/" className="ml-4 hover:underline">
-            ホーム
-          </Link>
-          {!token ? (
+          {token ? (
+            <>
+              <Link to="/dashboard" className="ml-4 hover:bg-white py-2 px-5 font-bold rounded">
+                ダッシュボード
+              </Link>
+              <Link to="/post-article" className="ml-4 hover:bg-white py-2 px-5 font-bold rounded">
+                記事投稿
+              </Link>
+              <LogoutButton /> {/* ログアウトボタン */}
+            </>
+          ) : (
             <Link to="/login" className="ml-4 hover:underline">
               ログイン
             </Link>
-          ) : (
-            <>
-              <Link to="/dashboard" className="ml-4 hover:underline">
-                ダッシュボード
-              </Link>
-              <button onClick={logout} className="ml-4 hover:underline">
-                ログアウト
-              </button>
-            </>
           )}
         </div>
       </div>

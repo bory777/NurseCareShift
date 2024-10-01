@@ -3,6 +3,9 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import PostArticle from './pages/PostArticle'; // 新しい記事投稿ページ
+import UnderstoodArticles from './pages/UnderstoodArticles'; // 理解した記事ページ
+import ReviewArticles from './pages/ReviewArticles'; // 復習したい記事ページ
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './components/AuthContext';
 import Navbar from './components/Navbar';
@@ -22,6 +25,9 @@ const App: React.FC = () => {
             {/* 認証が必要なルート (ProtectedRoute) */}
             <Route element={<ProtectedRoute />}>
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/understood-articles" element={<UnderstoodArticles />} /> {/* 理解した記事 */}
+              <Route path="/review-articles" element={<ReviewArticles />} /> {/* 復習したい記事 */}
+              <Route path="/post-article" element={<PostArticle />} /> {/* 記事投稿ルート */}
             </Route>
           </Routes>
         </div>
