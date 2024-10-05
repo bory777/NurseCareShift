@@ -9,6 +9,7 @@ import ReviewArticles from './pages/ReviewArticles'; // 復習したい記事ペ
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './components/AuthContext';
 import Navbar from './components/Navbar';
+import PreviewPage from './pages/PreviewPage';
 
 const App: React.FC = () => {
   return (
@@ -28,6 +29,7 @@ const App: React.FC = () => {
               <Route path="/understood-articles" element={<UnderstoodArticles />} /> {/* 理解した記事 */}
               <Route path="/review-articles" element={<ReviewArticles />} /> {/* 復習したい記事 */}
               <Route path="/post-article" element={<PostArticle />} /> {/* 記事投稿ルート */}
+              <Route path="/preview" element={<PreviewPage />} /> {/* プレビュー用ルート */}
             </Route>
           </Routes>
         </div>

@@ -37,6 +37,7 @@ const Dashboard: React.FC = () => {
       },
     })
       .then((response) => {
+        console.log(response); 
         if (!response.ok) {
           throw new Error('プロフィールの取得に失敗しました');
         }
