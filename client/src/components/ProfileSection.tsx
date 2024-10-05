@@ -1,11 +1,10 @@
 import React from 'react';
 
-const ProfileSection: React.FC<{ user: { name: string; email: string }; understoodCount: number; reviewCount: number; }> = ({ user, understoodCount, reviewCount }) => {
+const ProfileSection: React.FC<{ user: { name: string }; understoodCount: number; reviewCount: number; }> = ({ user, understoodCount, reviewCount }) => {
   return (
     <div className="profile-section bg-white p-4 rounded shadow-md max-w-md mx-auto">
       <h2 className="text-xl font-bold mb-4">プロフィール</h2>
       <p className="mb-2"><strong>名前:</strong> {user.name}</p>
-      <p className="mb-4"><strong>メール:</strong> {user.email}</p>
       <div className="mt-4 flex flex-wrap">
         <button 
           className="bg-green-500 text-white p-2 rounded hover:bg-green-600 transition-colors duration-300 w-full sm:w-auto" 

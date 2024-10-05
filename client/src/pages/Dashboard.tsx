@@ -1,10 +1,10 @@
-// src/pages/Dashboard.tsx
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../components/AuthContext';
 import LogoutButton from '../components/LogoutButton';
 import { Carousel } from 'react-responsive-carousel';
 import { FaCheckCircle, FaRedoAlt } from 'react-icons/fa';
 import 'react-responsive-carousel/lib/styles/carousel.min.css';
+import ProfileSection from '../components/ProfileSection'; // プロフィールセクションをインポート
 
 const genres = [
   { name: '血圧', link: '/articles/blood-pressure' },
@@ -16,7 +16,7 @@ const genres = [
 ];
 
 const Dashboard: React.FC = () => {
-  const [profile, setProfile] = useState<{ id: number; email: string } | null>(null);
+  const [profile, setProfile] = useState<{ id: number; name: string } | null>(null);
   const [understoodArticles, setUnderstoodArticles] = useState<number>(10); // 理解した記事数
   const [reviewArticles, setReviewArticles] = useState<number>(5); // 復習したい記事数
   const [error, setError] = useState<string | null>(null);
@@ -56,33 +56,17 @@ const Dashboard: React.FC = () => {
       <div className="w-full max-w-6xl">
         <h2 className="text-3xl font-bold text-blue-600 mb-8 text-center">ダッシュボード</h2>
 
-        {/* ユーザーIDと進捗状況のカード */}
+        {/* ユーザープロフィールカード */}
         <div className="flex w-full space-x-6">
-          {/* 左側: ユーザープロフィールカード */}
-          <div className="w-1/3 bg-white p-8 rounded-lg shadow-lg text-center">
-            <h3 className="text-2xl font-semibold text-gray-700">ユーザープロフィール</h3>
+          {/* 左側: プロフィールセクション */}
+          <div className="w-1/3">
             {error && <p className="text-red-500 mb-4">{error}</p>}
             {profile ? (
-              <div className="space-y-6 mt-4">
-                <p className="text-lg font-medium text-gray-700">ユーザーID: {profile.id}</p>
-
-                {/* 理解した記事数 */}
-                <div className="flex items-center justify-center bg-blue-100 p-4 rounded-lg shadow-md">
-                  <FaCheckCircle className="text-blue-500 text-3xl mr-2" />
-                  <p className="text-2xl font-bold text-blue-500">理解した: {understoodArticles}</p>
-                </div>
-
-                {/* 復習したい記事数 */}
-                <div className="flex items-center justify-center bg-yellow-100 p-4 rounded-lg shadow-md">
-                  <FaRedoAlt className="text-yellow-500 text-3xl mr-2" />
-                  <p className="text-2xl font-bold text-yellow-500">復習したい: {reviewArticles}</p>
-                </div>
-
-                {/* ログアウトボタン */}
-                <div className="mt-6">
-                  <LogoutButton />
-                </div>
-              </div>
+              <ProfileSection
+                user={{ name: profile.name }} // emailは渡さない
+                understoodCount={understoodArticles}
+                reviewCount={reviewArticles}
+              />
             ) : (
               !error && <p>プロフィールを読み込み中...</p>
             )}
