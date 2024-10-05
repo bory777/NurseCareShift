@@ -1,10 +1,12 @@
-// src/server.ts
 import express, { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import multer from 'multer';  // multerをインポート
+import fs from 'fs'; // 必要に応じて、ファイルシステム操作を使用
 
+// 型定義を拡張
 declare global {
   namespace Express {
     interface Request {
@@ -13,88 +15,73 @@ declare global {
   }
 }
 
-type LoginRequestBody = {
-  email: string;
-  password: string;
-};
-
 // 環境変数の読み込み
 dotenv.config();
 
-// シークレットキーを.envファイルから読み込み
 const SECRET_KEY = process.env.SECRET_KEY || 'your-secret-key';
 
-// ダミーデータとしてのユーザー情報（本来はデータベースから取得）
+// ダミーのユーザーデータ
 const users = [
   {
     id: 1,
     email: 'user@example.com',
-    password: bcrypt.hashSync('password123', 8), // パスワードをハッシュ化
+    password: bcrypt.hashSync('password123', 8),
   },
 ];
 
 // Expressアプリの作成
 const app = express();
 
-// CORSを有効にして、異なるポートからのリクエストを許可
+// CORSを設定
 app.use(cors({
-  origin: 'http://localhost:3000', // フロントエンドが動作しているポートを指定
+  origin: 'http://localhost:3000',
   methods: ['GET', 'POST'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true, // 認証情報を扱えるようにする
+  credentials: true,
 }));
 
-app.use(express.json()); // リクエストボディをJSON形式で解析
+app.use(express.json());
 
-// ログインエンドポイントの作成
-app.post('/api/login', (req: Request<{}, {}, LoginRequestBody>, res: Response) => {
-  const { email, password } = req.body;
-
-  // ユーザーの存在確認
-  const user = users.find(u => u.email === email);
-  if (!user) {
-    return res.status(404).json({ message: 'ユーザーが見つかりません' });
+// multerの設定
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/');  // アップロード先のフォルダを指定
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + '-' + file.originalname);  // ファイル名をユニークにする
   }
-
-  // パスワードの検証
-  const isPasswordValid = bcrypt.compareSync(password, user.password);
-  if (!isPasswordValid) {
-    return res.status(401).json({ message: '無効なパスワードです' });
-  }
-
-  // JWTトークンの発行
-  const token = jwt.sign({ id: user.id, email: user.email }, SECRET_KEY, {
-    expiresIn: '1h', // トークンの有効期限は1時間
-  });
-
-  // トークンをレスポンスとして返す
-  return res.json({
-    message: 'ログイン成功',
-    token: token, // トークンをフロントエンドに返却
-  });
 });
+
+const upload = multer({ storage: storage });
 
 // JWT認証用のミドルウェア
 const verifyToken = (req: Request, res: Response, next: NextFunction) => {
   const token = req.headers['authorization']?.split(' ')[1];
-  
+
   if (!token) {
-    console.log('トークンがありません');
     return res.status(403).send({ message: 'トークンが提供されていません' });
   }
 
   jwt.verify(token, SECRET_KEY, (err, decoded) => {
     if (err) {
-      console.log('トークンの認証に失敗しました', err);
       return res.status(500).send({ message: 'トークンの認証に失敗しました' });
     }
     req.userId = (decoded as { id: number }).id;
-    console.log('トークンの検証に成功しました');
     next();
   });
 };
 
-// プロテクトされたルートの例
+// 画像アップロード用エンドポイント
+app.post('/api/upload', verifyToken, upload.single('image'), (req: Request, res: Response) => {
+  if (!req.file) {
+    return res.status(400).json({ message: 'ファイルが提供されていません' });
+  }
+
+  // アップロードされた画像のパスをレスポンスとして返す
+  res.json({ filePath: `/uploads/${req.file.filename}` });
+});
+
+// プロフィール取得のAPIエンドポイント
 app.get('/api/profile', verifyToken, (req: Request, res: Response) => {
   const user = users.find(u => u.id === req.userId);
   if (!user) {
@@ -105,6 +92,9 @@ app.get('/api/profile', verifyToken, (req: Request, res: Response) => {
     email: user.email,
   });
 });
+
+// 静的ファイルとしてuploadsフォルダを公開
+app.use('/uploads', express.static('uploads'));
 
 // サーバーの起動
 const PORT = process.env.PORT || 8000;
