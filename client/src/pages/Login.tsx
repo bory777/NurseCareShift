@@ -10,7 +10,6 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
   const { token, login } = useAuth();
 
-  // すでにログインしている場合はダッシュボードへリダイレクト
   useEffect(() => {
     if (token) {
       navigate('/dashboard');
@@ -22,13 +21,13 @@ const Login: React.FC = () => {
     setError(null);
 
     try {
-      console.log('ログインリクエストを送信します...');  // ログ追加
       const response = await fetch('http://localhost:8000/api/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email, password }),
+        credentials: 'include', // クッキーを送信
       });
 
       if (!response.ok) {
@@ -37,8 +36,7 @@ const Login: React.FC = () => {
       }
 
       const data = await response.json();
-      console.log('サーバーから取得したトークン:', data.accessToken);  // サーバーからのトークン確認
-      login(data.accessToken);  // トークンをAuthContextにセット
+      login(data.accessToken); // アクセストークンをAuthContextにセット
       navigate('/dashboard');
     } catch (err: any) {
       setError(err.message);

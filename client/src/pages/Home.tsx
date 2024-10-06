@@ -28,12 +28,20 @@ const Home: React.FC = () => {
               ダッシュボードに移動する
             </Link>
           ) : (
-            <Link
-              to="/login"
-              className="bg-blue-400 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-full shadow-lg transition duration-300"
-            >
-              ログインして始める
-            </Link>
+            <div className="space-x-4">
+              <Link
+                to="/login"
+                className="bg-blue-400 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-full shadow-lg transition duration-300"
+              >
+                ログインして始める
+              </Link>
+              <Link
+                to="/register"
+                className="bg-green-400 hover:bg-green-500 text-white font-bold py-3 px-6 rounded-full shadow-lg transition duration-300"
+              >
+                新規登録
+              </Link>
+            </div>
           )}
         </div>
       </div>

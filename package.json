@@ -11,12 +11,16 @@
   },
   "dependencies": {
     "@tinymce/tinymce-react": "^5.1.1",
+    "@types/react-select": "^5.0.0",
+    "cookie-parser": "^1.4.6",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-scripts": "4.0.3",
+    "react-select": "^5.8.1",
     "tinymce": "^7.3.0"
   },
   "devDependencies": {
+    "@types/cookie-parser": "^1.4.7",
     "@types/react": "^18.3.11",
     "autoprefixer": "^10.2.5",
     "postcss": "^8.4.47",

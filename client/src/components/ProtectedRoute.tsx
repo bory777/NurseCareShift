@@ -1,17 +1,17 @@
+// ProtectedRoute.tsx
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from './AuthContext'; // AuthContextを使用
+import { useAuth } from './AuthContext';
 
 const ProtectedRoute: React.FC = () => {
-  const { token } = useAuth(); // ログイン状態を取得
-  console.log('ProtectedRoute - トークン確認: ', token);
+  const { token } = useAuth();
 
-  // トークンがなければログインページにリダイレクト
+  // トークンがない場合はログインページへリダイレクト
   if (!token) {
     return <Navigate to="/login" />;
   }
 
-  // トークンがあれば、保護されたコンテンツを表示
+  // トークンがある場合は保護されたコンテンツを表示
   return <Outlet />;
 };
 
