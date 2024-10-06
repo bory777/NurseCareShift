@@ -21,23 +21,34 @@ export const useAuth = () => {
 
 // AuthProviderコンポーネント
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
-
-  useEffect(() => {
+  // localStorageからトークンを取得し、初期化
+  const [token, setToken] = useState<string | null>(() => {
     const storedToken = localStorage.getItem('token');
-    if (storedToken) {
-      setToken(storedToken);
-    }
-  }, []);
+    console.log('AuthProvider初期化 - localStorageから取得したトークン:', storedToken);  // 初期化時にlocalStorageのトークンを確認
+    return storedToken;
+  });
 
+  // tokenが変更されたときにlocalStorageを更新
+  useEffect(() => {
+    if (token) {
+      console.log('トークンがlocalStorageにセットされました:', token); // トークンが保存される瞬間のログ
+      localStorage.setItem('token', token);
+    } else {
+      console.log('トークンがlocalStorageから削除されました'); // トークンが削除される瞬間のログ
+      localStorage.removeItem('token');
+    }
+  }, [token]);
+
+  // ログイン時の処理
   const login = (newToken: string) => {
-    localStorage.setItem('token', newToken);
-    setToken(newToken);
+    console.log('login関数が呼ばれ、トークンがセットされます:', newToken); // トークンがセットされる瞬間をログ出力
+    setToken(newToken); // localStorageはuseEffectで更新される
   };
 
+  // ログアウト時の処理
   const logout = () => {
-    localStorage.removeItem('token');
-    setToken(null);
+    console.log('logout関数が呼ばれ、トークンがクリアされます'); // ログアウト時のログ出力
+    setToken(null); // localStorageはuseEffectでクリアされる
   };
 
   return (

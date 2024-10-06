@@ -67,6 +67,7 @@ const verifyToken = (req: Request, res: Response, next: NextFunction) => {
 
   jwt.verify(token, SECRET_KEY, (err, decoded) => {
     if (err) {
+      console.error('アクセストークンの認証に失敗しました:', err.message);
       return res.status(500).send({ message: 'トークンの認証に失敗しました' });
     }
     req.userId = (decoded as { id: number }).id;
@@ -85,6 +86,7 @@ app.post('/api/login', (req: Request, res: Response) => {
   const user = users.find(u => u.email === email);
 
   if (!user || !bcrypt.compareSync(password, user.password)) {
+    console.error('認証エラー: ユーザーが存在しないか、パスワードが違います');
     return res.status(401).send({ message: '認証に失敗しました' });
   }
 
@@ -95,6 +97,10 @@ app.post('/api/login', (req: Request, res: Response) => {
   // リフレッシュトークンを保存
   refreshTokens.push(refreshToken);
 
+  console.log('ログイン成功: アクセストークンとリフレッシュトークンを生成');
+  console.log('アクセストークン:', accessToken);
+  console.log('リフレッシュトークン:', refreshToken);
+
   res.json({ accessToken, refreshToken });
 });
 
@@ -103,20 +109,24 @@ app.post('/api/token', (req: Request, res: Response) => {
   const { token } = req.body;
 
   if (!token) {
+    console.error('リフレッシュトークンが提供されていません');
     return res.status(401).send({ message: 'リフレッシュトークンが提供されていません' });
   }
 
   if (!refreshTokens.includes(token)) {
+    console.error('無効なリフレッシュトークンです');
     return res.status(403).send({ message: '無効なリフレッシュトークンです' });
   }
 
   jwt.verify(token, REFRESH_SECRET_KEY, (err: any, decoded: any) => {
     if (err || !decoded) {
+      console.error('リフレッシュトークンの認証に失敗しました:', err?.message || '不明なエラー');
       return res.status(403).send({ message: 'リフレッシュトークンの認証に失敗しました' });
     }
 
     const userId = decoded.id;
     const newAccessToken = jwt.sign({ id: userId }, SECRET_KEY, { expiresIn: '1h' });
+    console.log('リフレッシュトークン認証成功、新しいアクセストークンを生成');
     res.json({ accessToken: newAccessToken });
   });
 });
@@ -125,6 +135,7 @@ app.post('/api/token', (req: Request, res: Response) => {
 app.post('/api/logout', (req: Request, res: Response) => {
   const { token } = req.body;
   refreshTokens = refreshTokens.filter(t => t !== token);
+  console.log('ログアウト成功: リフレッシュトークンを削除');
   res.status(200).send({ message: 'ログアウトしました' });
 });
 
@@ -140,8 +151,10 @@ app.post('/api/upload', verifyToken, upload.single('image'), (req: Request, res:
 app.get('/api/profile', verifyToken, (req: Request, res: Response) => {
   const user = users.find(u => u.id === req.userId);
   if (!user) {
+    console.error('ユーザープロフィールが見つかりません');
     return res.status(404).json({ message: 'ユーザーが見つかりません' });
   }
+  console.log('プロフィール取得成功: ユーザーID:', user.id);
   res.json({
     id: user.id,
     email: user.email,

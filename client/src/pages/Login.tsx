@@ -1,3 +1,4 @@
+// Login.tsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../components/AuthContext';
@@ -21,6 +22,7 @@ const Login: React.FC = () => {
     setError(null);
 
     try {
+      console.log('ログインリクエストを送信します...');  // ログ追加
       const response = await fetch('http://localhost:8000/api/login', {
         method: 'POST',
         headers: {
@@ -35,7 +37,8 @@ const Login: React.FC = () => {
       }
 
       const data = await response.json();
-      login(data.token);
+      console.log('サーバーから取得したトークン:', data.accessToken);  // サーバーからのトークン確認
+      login(data.accessToken);  // トークンをAuthContextにセット
       navigate('/dashboard');
     } catch (err: any) {
       setError(err.message);
