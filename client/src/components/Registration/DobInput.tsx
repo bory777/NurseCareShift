@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 
-const DobInput: React.FC = () => {
+interface DobInputProps {
+  onNext: (data: { birthdate: string }) => void;
+}
+
+const DobInput: React.FC<DobInputProps> = ({ onNext }) => {
   const [dob, setDob] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
 
   // 生年月日のバリデーション
   const validateDob = (dob: string): string | null => {
@@ -22,9 +24,8 @@ const DobInput: React.FC = () => {
       return;
     }
 
-    // 生年月日をコンソールに出力して、次のページに遷移
-    console.log('生年月日:', dob);
-    navigate('/job-info-input'); // 職務情報入力ページに遷移
+    // 生年月日を次のステップに渡す
+    onNext({ birthdate: dob });
   };
 
   return (

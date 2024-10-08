@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 
-const NotificationSettings: React.FC = () => {
+interface NotificationSettingsProps {
+  onNext: (data: any) => void;
+}
+
+const NotificationSettings: React.FC<NotificationSettingsProps> = ({ onNext }) => {
   const [emailNotifications, setEmailNotifications] = useState(false);
   const [snsNotifications, setSnsNotifications] = useState<string[]>([]);
-  const navigate = useNavigate();
 
   const snsOptions = ['Google', 'Twitter', 'Apple', 'LINE', 'Instagram'];
 
@@ -23,7 +25,9 @@ const NotificationSettings: React.FC = () => {
       snsNotifications,
     };
     console.log('通知設定:', notificationSettings);
-    navigate('/confirmation'); // 確認ページへ遷移
+
+    // データを onNext 関数で送信し、次のステップへ進む
+    onNext({ notificationSettings });
   };
 
   return (
@@ -67,7 +71,7 @@ const NotificationSettings: React.FC = () => {
           <div className="mt-6 flex justify-between">
             <button
               type="button"
-              onClick={() => navigate(-1)} // 前のページに戻る
+              onClick={() => onNext({})} // 戻る機能のため、空のデータを渡してステップを戻す
               className="bg-gray-300 text-gray-700 py-3 px-4 rounded-lg shadow-lg"
             >
               戻る

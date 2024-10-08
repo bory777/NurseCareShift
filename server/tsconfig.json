@@ -5,10 +5,14 @@
     "outDir": "./dist",                       // コンパイル後の出力先ディレクトリ
     "rootDir": "./src",                       // TypeScriptソースファイルのルートディレクトリ
     "strict": true,                           // 厳格な型チェック
+    "moduleResolution": "node",               // モジュール解決
     "esModuleInterop": true,                  // ESモジュールとCommonJSモジュールの互換性
     "skipLibCheck": true,                     // ライブラリ型チェックのスキップ
     "forceConsistentCasingInFileNames": true  // ファイル名の大文字小文字の一貫性を強制
   },
-  "include": ["src/**/*.ts"],                 // コンパイル対象のTypeScriptファイル
+  "include": [
+    "src/**/*.ts",
+    "src/types/**/*.d.ts"
+  ],
   "exclude": ["node_modules"]                 // 除外するディレクトリ
 }

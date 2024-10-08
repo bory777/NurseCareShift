@@ -1,78 +1,133 @@
 import express, { Request, Response } from 'express';
+import passport from 'passport';
+import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
+import { Strategy as TwitterStrategy } from 'passport-twitter';
+import { Strategy as InstagramStrategy } from 'passport-instagram';
+import AppleStrategy from 'passport-apple'; // 修正
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 
-// 型定義を拡張する
-declare global {
-  namespace Express {
-    interface Request {
-      userId?: number; // userIdをオプションとして追加
-    }
-  }
+dotenv.config();
+
+interface User {
+  id: number;
+  email: string;
+  password?: string; // OAuthではパスワードがない場合もあるためオプションとする
+  name: string;
 }
 
-dotenv.config();
+const app = express();
+
+// CORS設定: クライアントのlocalhost:3000からのリクエストを許可
+app.use(cors({
+  origin: 'http://localhost:3000',
+  credentials: true,
+}));
+
+app.use(express.json());
+app.use(cookieParser());
+
+const users: User[] = []; // ユーザー配列
 
 const SECRET_KEY = process.env.SECRET_KEY || 'your-secret-key';
 const REFRESH_SECRET_KEY = process.env.REFRESH_SECRET_KEY || 'your-refresh-secret-key';
 
-// ユーザー情報の配列
-let users = [
-  { id: 1, email: 'user@example.com', password: bcrypt.hashSync('password123', 8), name: 'User One', isNursingStudent: false, yearsOfExperience: 5, departments: ['外科'] },
-];
+// JWTを生成するヘルパー関数
+const generateToken = (user: User) => jwt.sign({ id: user.id, email: user.email }, SECRET_KEY, { expiresIn: '1h' });
 
-const app = express();
-app.use(cors({
-  origin: 'http://localhost:3000',
-  credentials: true, // クッキーを許可
+// Google OAuth認証設定
+passport.use(new GoogleStrategy({
+  clientID: process.env.GOOGLE_CLIENT_ID!,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+  callbackURL: 'http://localhost:8000/auth/google/callback'
+}, (accessToken, refreshToken, profile, done) => {
+  const user = { id: profile.id, email: profile.emails ? profile.emails[0].value : '', name: profile.displayName };
+  done(null, user);
 }));
-app.use(express.json());
-app.use(cookieParser());
 
-// JWT認証用ミドルウェア
-const verifyToken = (req: Request, res: Response, next: any) => {
-  const token = req.headers['authorization']?.split(' ')[1];
-  if (!token) return res.status(403).send('トークンが提供されていません');
-  
-  jwt.verify(token, SECRET_KEY, (err, decoded) => {
-    if (err) return res.status(500).send('トークンの認証に失敗しました');
-    req.userId = (decoded as { id: number }).id;
-    next();
-  });
-};
+// Twitter OAuth認証設定
+passport.use(new TwitterStrategy({
+  consumerKey: process.env.TWITTER_CONSUMER_KEY!,
+  consumerSecret: process.env.TWITTER_CONSUMER_SECRET!,
+  callbackURL: 'http://localhost:8000/auth/twitter/callback'
+}, (token, tokenSecret, profile, done) => {
+  const user = { id: profile.id, username: profile.username };
+  done(null, user);
+}));
 
-// ユーザー登録用のエンドポイント
+// Instagram OAuth認証設定
+passport.use(new InstagramStrategy({
+  clientID: process.env.INSTAGRAM_CLIENT_ID!,
+  clientSecret: process.env.INSTAGRAM_CLIENT_SECRET!,
+  callbackURL: 'http://localhost:8000/auth/instagram/callback'
+}, (accessToken, refreshToken, profile, done) => {
+  const user = { id: profile.id, username: profile.username };
+  done(null, user);
+}));
+
+// Apple OAuth認証設定
+passport.use(new AppleStrategy({
+  clientID: process.env.APPLE_CLIENT_ID!,
+  teamID: process.env.APPLE_TEAM_ID!,
+  keyID: process.env.APPLE_KEY_ID!,
+  privateKey: process.env.APPLE_PRIVATE_KEY!.replace(/\\n/g, '\n'), // 改行文字を修正
+  callbackURL: 'http://localhost:8000/auth/apple/callback',
+  scope: ['name', 'email']
+}, (accessToken: string, refreshToken: string, profile: any, done: (error: any, user?: any) => void) => {
+  const user = { id: profile.id, email: profile.email || '' };
+  done(null, user);
+}));
+
+app.use(passport.initialize());
+
+// 認証ルート
+app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+app.get('/auth/google/callback', passport.authenticate('google', { failureRedirect: '/' }), (req, res) => {
+  const token = generateToken(req.user as User);
+  res.redirect(`http://localhost:3000/success?token=${token}`);
+});
+
+app.get('/auth/twitter', passport.authenticate('twitter'));
+app.get('/auth/twitter/callback', passport.authenticate('twitter', { failureRedirect: '/' }), (req, res) => {
+  const token = generateToken(req.user as User);
+  res.redirect(`http://localhost:3000/success?token=${token}`);
+});
+
+app.get('/auth/instagram', passport.authenticate('instagram'));
+app.get('/auth/instagram/callback', passport.authenticate('instagram', { failureRedirect: '/' }), (req, res) => {
+  const token = generateToken(req.user as User);
+  res.redirect(`http://localhost:3000/success?token=${token}`);
+});
+
+app.get('/auth/apple', passport.authenticate('apple'));
+app.get('/auth/apple/callback', passport.authenticate('apple', { failureRedirect: '/' }), (req, res) => {
+  const token = generateToken(req.user as User);
+  res.redirect(`http://localhost:3000/success?token=${token}`);
+});
+
+// その他のルート（例：ユーザー登録、ログイン、認証）
 app.post('/api/register', (req: Request, res: Response) => {
-  const { email, password, name, isNursingStudent, yearsOfExperience, departments } = req.body;
+  const { email, password, name } = req.body;
+  const existingUser = users.find(user => user.email === email);
 
-  const existingUser = users.find(u => u.email === email);
   if (existingUser) {
-    return res.status(400).send({ message: 'このメールアドレスは既に登録されています' });
+    return res.status(400).send('このメールアドレスは既に使用されています。');
   }
 
   const hashedPassword = bcrypt.hashSync(password, 8);
-  const newUser = {
-    id: users.length + 1,
-    email,
-    password: hashedPassword,
-    name,
-    isNursingStudent,
-    yearsOfExperience,
-    departments,
-  };
+  const newUser: User = { id: users.length + 1, email, password: hashedPassword, name };
   users.push(newUser);
 
-  const accessToken = jwt.sign({ id: newUser.id }, SECRET_KEY, { expiresIn: '1h' });
+  const accessToken = generateToken(newUser);
   const refreshToken = jwt.sign({ id: newUser.id }, REFRESH_SECRET_KEY, { expiresIn: '7d' });
 
   res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: false });
   res.json({ accessToken });
 });
 
-// その他のエンドポイント...
-
-const PORT = process.env.PORT || 8000;
-app.listen(PORT, () => console.log(`サーバーがポート${PORT}で起動しました`));
+app.listen(8000, () => {
+  console.log('サーバーがポート8000で起動しました');
+});

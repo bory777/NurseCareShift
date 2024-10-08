@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 
-const EmailVerification: React.FC = () => {
+interface EmailVerificationProps {
+  onNext: (data: { verificationCode: string }) => void;
+}
+
+const EmailVerification: React.FC<EmailVerificationProps> = ({ onNext }) => {
   const [verificationCode, setVerificationCode] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
 
   // 確認コードのバリデーション関数
   const validateVerificationCode = (code: string): string | null => {
@@ -21,11 +23,8 @@ const EmailVerification: React.FC = () => {
       return;
     }
 
-    // 認証処理を行う（APIなどと通信）
-    console.log('確認コード:', verificationCode);
-
-    // エラーがなければ次のページに遷移する
-    navigate('/dob-input'); // 生年月日入力ページに遷移
+    // 認証が成功したら次のステップに進む
+    onNext({ verificationCode });
   };
 
   return (

@@ -1,7 +1,12 @@
-import React, { useReducer, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useReducer } from 'react';
+import { FaGoogle, FaInstagram, FaApple } from 'react-icons/fa'; // SNSアイコン
+import { SiX } from 'react-icons/si'; // X (旧Twitter) アイコン
 
 type Field = 'email' | 'password' | 'username' | 'snsLinked';
+
+interface InitialRegistrationProps {
+  onNext: (data: { email: string; password: string; username: string }) => void;
+}
 
 const validateEmail = (email: string): string | null => {
   return /\S+@\S+\.\S+/.test(email) ? null : '有効なメールアドレスを入力してください。';
@@ -37,9 +42,8 @@ function formReducer(state: typeof initialState, action: any) {
   }
 }
 
-const InitialRegistration: React.FC = () => {
+const InitialRegistration: React.FC<InitialRegistrationProps> = ({ onNext }) => {
   const [state, dispatch] = useReducer(formReducer, initialState);
-  const navigate = useNavigate();
 
   const handleChange = (field: Field) => (e: React.ChangeEvent<HTMLInputElement>) => {
     dispatch({ type: 'SET_FIELD', field, value: e.target.value });
@@ -54,14 +58,6 @@ const InitialRegistration: React.FC = () => {
     }
   };
 
-  const handleSNSLink = (snsPlatform: string) => {
-    // SNSアカウント連携の処理
-    console.log(`${snsPlatform} 連携中...`);
-    dispatch({ type: 'SET_SNS_LINKED', value: true });
-    // SNS連携が完了したら次のステップに進む
-    navigate('/dob-input'); // 次のページに遷移
-  };
-
   const handleRegister = () => {
     const emailError = validateEmail(state.email);
     const passwordError = validatePassword(state.password);
@@ -69,11 +65,19 @@ const InitialRegistration: React.FC = () => {
     dispatch({ type: 'SET_ERROR', field: 'email', error: emailError });
     dispatch({ type: 'SET_ERROR', field: 'password', error: passwordError });
 
-    if (!emailError && !passwordError && !state.snsLinked) {
-      console.log('登録データ:', state);
-      // メール認証画面へ遷移
-      navigate('/email-verification');
+    if (!emailError && !passwordError) {
+      // 次のステップに進むためのデータを親コンポーネントに渡す
+      onNext({
+        email: state.email,
+        password: state.password,
+        username: state.username,
+      });
     }
+  };
+
+  const handleOAuthLogin = (provider: string) => {
+    // 各SNS認証用のルートにリダイレクト
+    window.location.href = `http://localhost:8000/auth/${provider}`;
   };
 
   return (
@@ -116,45 +120,23 @@ const InitialRegistration: React.FC = () => {
           {state.errors.password && <p id="password-error" className="text-red-500 text-sm mt-1">{state.errors.password}</p>}
 
           {/* SNSアカウント連携 */}
-          <div className="space-y-4">
-            <h3 className="text-xl font-bold text-blue-600">SNSアカウントで登録</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <button
-                type="button"
-                onClick={() => handleSNSLink('Google')}
-                className="w-full bg-red-500 text-white py-3 px-4 rounded-lg shadow-lg transition duration-300 hover:bg-red-600"
-              >
-                Google
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSNSLink('Twitter')}
-                className="w-full bg-blue-500 text-white py-3 px-4 rounded-lg shadow-lg transition duration-300 hover:bg-blue-600"
-              >
-                Twitter
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSNSLink('Apple')}
-                className="w-full bg-gray-800 text-white py-3 px-4 rounded-lg shadow-lg transition duration-300 hover:bg-gray-900"
-              >
-                Apple
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSNSLink('LINE')}
-                className="w-full bg-green-500 text-white py-3 px-4 rounded-lg shadow-lg transition duration-300 hover:bg-green-600"
-              >
-                LINE
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSNSLink('Instagram')}
-                className="w-full bg-pink-500 text-white py-3 px-4 rounded-lg shadow-lg transition duration-300 hover:bg-pink-600"
-              >
-                Instagram
-              </button>
-            </div>
+          <div className="flex justify-center space-x-6 mt-6">
+            <FaGoogle
+              className="text-red-500 text-4xl cursor-pointer"
+              onClick={() => handleOAuthLogin('google')}
+            />
+            <SiX
+              className="text-black text-4xl cursor-pointer"
+              onClick={() => handleOAuthLogin('x')}
+            />
+            <FaInstagram
+              className="text-pink-500 text-4xl cursor-pointer"
+              onClick={() => handleOAuthLogin('instagram')}
+            />
+            <FaApple
+              className="text-black text-4xl cursor-pointer"
+              onClick={() => handleOAuthLogin('apple')}
+            />
           </div>
 
           <button
