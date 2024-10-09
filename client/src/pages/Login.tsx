@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../components/AuthContext';
 
@@ -7,13 +7,7 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { token, login } = useAuth();
-
-  useEffect(() => {
-    if (token) {
-      navigate('/dashboard');
-    }
-  }, [token, navigate]);
+  const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,7 +20,7 @@ const Login: React.FC = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email, password }),
-        credentials: 'include', // クッキーを送信
+        credentials: 'include', // HttpOnlyクッキーを使用するためのオプション
       });
 
       if (!response.ok) {
@@ -35,8 +29,8 @@ const Login: React.FC = () => {
       }
 
       const data = await response.json();
-      login(data.accessToken); // アクセストークンをAuthContextにセット
-      navigate('/dashboard');
+      login(data.accessToken); // アクセストークンをコンテキストにセット
+      navigate('/dashboard'); // ダッシュボードに遷移
     } catch (err: any) {
       setError(err.message);
     }

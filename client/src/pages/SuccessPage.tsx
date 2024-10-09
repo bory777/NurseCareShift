@@ -5,8 +5,24 @@ const SuccessPage: React.FC = () => {
   const navigate = useNavigate();
 
   const handleGoToDashboard = () => {
-    // ダッシュボードに遷移する
-    navigate('/dashboard'); // ダッシュボードへのルートを指定
+    // ダッシュボードにリダイレクトする前に、必要なリクエストを送信する
+    fetch('/api/protected-route', {
+      method: 'GET',
+      credentials: 'include', // HttpOnlyクッキーを送信
+    })
+      .then(response => {
+        if (response.ok) {
+          // ダッシュボードに遷移する
+          navigate('/dashboard'); // ダッシュボードへのルートを指定
+        } else {
+          // エラーハンドリング（例：ログインページにリダイレクトする）
+          navigate('/login');
+        }
+      })
+      .catch(() => {
+        // リクエストエラー時の処理
+        navigate('/login');
+      });
   };
 
   return (

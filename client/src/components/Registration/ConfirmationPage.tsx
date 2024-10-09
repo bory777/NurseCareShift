@@ -17,18 +17,17 @@ interface ConfirmationProps {
       snsNotifications: string[];
     };
   };
+  onBack: () => void;
 }
 
-const ConfirmationPage: React.FC<ConfirmationProps> = ({ formData }) => {
+const ConfirmationPage: React.FC<ConfirmationProps> = ({ formData, onBack }) => {
   const navigate = useNavigate();
 
   const handleSubmit = () => {
-    // 全ての情報をコンソールで確認（本来はサーバーに送信）
+    // 本来はここでサーバーにデータを送信する処理が行われる
     console.log('アカウント情報:', formData);
-    
-    // サーバーに登録する処理をここで実装（APIコール等）
-    
-    // 登録が完了したら次のページへ遷移
+
+    // サーバーからの成功レスポンスを想定して、登録完了後にサクセスページへ遷移
     navigate('/success');
   };
 
@@ -70,14 +69,14 @@ const ConfirmationPage: React.FC<ConfirmationProps> = ({ formData }) => {
           <div className="mt-6 flex justify-between">
             <button
               type="button"
-              onClick={() => navigate(-1)} // 前のページに戻る
+              onClick={onBack} // 戻る処理
               className="bg-gray-300 text-gray-700 py-3 px-4 rounded-lg shadow-lg"
             >
               戻る
             </button>
             <button
               type="button"
-              onClick={handleSubmit}
+              onClick={handleSubmit} // 登録処理を行いサクセスページへ遷移
               className="bg-blue-500 text-white py-3 px-4 rounded-lg shadow-lg"
             >
               登録

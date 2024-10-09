@@ -12,7 +12,8 @@
   },
   "include": [
     "src/**/*.ts",
-    "src/types/**/*.d.ts"
+    "src/types/passport-apple.d.ts",
+    "src/types/express/index.d.ts"
   ],
   "exclude": ["node_modules"]                 // 除外するディレクトリ
 }

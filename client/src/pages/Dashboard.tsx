@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // navigateをインポート
 import { useAuth } from '../components/AuthContext';
 import LogoutButton from '../components/LogoutButton';
 import { Carousel } from 'react-responsive-carousel';
@@ -21,35 +22,69 @@ const Dashboard: React.FC = () => {
   const [reviewArticles, setReviewArticles] = useState<number>(5); // 復習したい記事数
   const [error, setError] = useState<string | null>(null);
   const { token } = useAuth();
+  const navigate = useNavigate(); // navigateを取得
 
   useEffect(() => {
     if (!token) {
       setError('ログインが必要です');
+      navigate('/login'); // トークンがない場合はログイン画面にリダイレクト
       return;
     }
 
     // プロフィール取得のAPIリクエスト
-    fetch('http://localhost:8000/api/profile', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-    })
-      .then((response) => {
-        console.log(response); 
-        if (!response.ok) {
-          throw new Error('プロフィールの取得に失敗しました');
+    const fetchProfile = async (accessToken: string) => {
+      try {
+        const response = await fetch('http://localhost:8000/api/profile', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+          },
+          credentials: 'include', // HttpOnlyクッキーを含める
+        });
+
+        // アクセストークンが無効な場合、リフレッシュトークンを使って再認証
+        if (response.status === 401) {
+          const refreshResponse = await fetch('http://localhost:8000/api/refresh-token', {
+            method: 'POST',
+            credentials: 'include', // HttpOnlyクッキーを送信
+          });
+
+          if (!refreshResponse.ok) {
+            throw new Error('再認証に失敗しました');
+          }
+
+          const refreshData = await refreshResponse.json();
+
+          if (refreshData.message === '新しいアクセストークンが発行されました') {
+            // 新しいアクセストークンでプロフィールを再取得
+            const newProfileResponse = await fetch('http://localhost:8000/api/profile', {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`, // 更新されたトークンを使用
+              },
+              credentials: 'include',
+            });
+
+            if (newProfileResponse.ok) {
+              const newProfileData = await newProfileResponse.json();
+              setProfile(newProfileData);
+            } else {
+              throw new Error('プロフィールの取得に失敗しました');
+            }
+          }
+        } else {
+          const profileData = await response.json();
+          setProfile(profileData);
         }
-        return response.json();
-      })
-      .then((data) => {
-        setProfile(data);
-      })
-      .catch((err) => {
+      } catch (err: any) {
         setError(err.message);
-      });
-  }, [token]);
+      }
+    };
+
+    fetchProfile(token);
+  }, [token, navigate]);
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-blue-50 p-10">

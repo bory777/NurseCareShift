@@ -28,9 +28,16 @@ const RegistrationPage: React.FC = () => {
   const [step, setStep] = useState(1); // 現在のステップを管理
 
   // ステップ進行を管理する関数
-  const handleNext = (data: any) => {
-    setFormData({ ...formData, ...data }); // これまでのデータに新しいデータをマージ
+  const handleNext = (data?: any) => {
+    if (data) {
+      setFormData({ ...formData, ...data }); // データがある場合のみマージ
+    }
     setStep(step + 1); // 次のステップへ進む
+  };
+
+  // ステップを戻る関数
+  const handleBack = () => {
+    setStep(step - 1); // ステップを1つ戻す
   };
 
   return (
@@ -40,8 +47,8 @@ const RegistrationPage: React.FC = () => {
       {step === 2 && <EmailVerification onNext={handleNext} />}
       {step === 3 && <DobInput onNext={handleNext} />}
       {step === 4 && <JobInfoInput onNext={handleNext} />}
-      {step === 5 && <NotificationSettings onNext={handleNext} />}
-      {step === 6 && <ConfirmationPage formData={formData} />}
+      {step === 5 && <NotificationSettings onNext={handleNext} onBack={handleBack} />}
+      {step === 6 && <ConfirmationPage onBack={handleBack} formData={formData} />}
     </div>
   );
 };

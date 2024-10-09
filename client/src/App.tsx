@@ -3,20 +3,22 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
-import PostArticle from './pages/PostArticle'; // 新しい記事投稿ページ
-import UnderstoodArticles from './pages/UnderstoodArticles'; // 理解した記事ページ
-import ReviewArticles from './pages/ReviewArticles'; // 復習したい記事ページ
+import PostArticle from './pages/PostArticle';
+import UnderstoodArticles from './pages/UnderstoodArticles';
+import ReviewArticles from './pages/ReviewArticles';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './components/AuthContext';
 import Navbar from './components/Navbar';
 import PreviewPage from './pages/PreviewPage';
-import SuccessPage from './pages/SuccessPage'; // 登録完了ページ
-import RegistrationPage from './pages/RegistrationPage'; // 登録ページ
+import SuccessPage from './pages/SuccessPage';
+import RegistrationPage from './pages/RegistrationPage';
+import ArticleList from './pages/ArticleListPage';
 
 const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <Router>
+    <Router>
+      {/* AuthProviderをRouter内に移動 */}
+      <AuthProvider>
         <div>
           {/* ナビゲーションバーを全ページで表示 */}
           <Navbar />
@@ -24,21 +26,22 @@ const App: React.FC = () => {
             {/* ホームページとログイン・登録ページ */}
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<RegistrationPage />} /> {/* 新規登録ページ */}
-            <Route path="/complete" element={<SuccessPage />} /> {/* 登録完了ページ */}
+            <Route path="/register" element={<RegistrationPage />} />
+            <Route path="/success" element={<SuccessPage />} />
 
             {/* 認証が必要なルート (ProtectedRoute) */}
             <Route element={<ProtectedRoute />}>
-              <Route path="/dashboard" element={<Dashboard />} /> {/* ダッシュボード */}
-              <Route path="/understood-articles" element={<UnderstoodArticles />} /> {/* 理解した記事 */}
-              <Route path="/review-articles" element={<ReviewArticles />} /> {/* 復習したい記事 */}
-              <Route path="/post-article" element={<PostArticle />} /> {/* 記事投稿 */}
-              <Route path="/preview" element={<PreviewPage />} /> {/* プレビュー用ルート */}
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/understood-articles" element={<UnderstoodArticles />} />
+              <Route path="/review-articles" element={<ReviewArticles />} />
+              <Route path="/post-article" element={<PostArticle />} />
+              <Route path="/preview" element={<PreviewPage />} />
+              <Route path="/article-list" element={<ArticleList />} />
             </Route>
           </Routes>
         </div>
-      </Router>
-    </AuthProvider>
+      </AuthProvider>
+    </Router>
   );
 };
 

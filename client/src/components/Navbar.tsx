@@ -23,7 +23,10 @@ const Navbar: React.FC = () => {
               <Link to="/post-article" className="ml-4 hover:bg-white py-2 px-5 font-bold rounded">
                 記事投稿
               </Link>
-              <LogoutButton /> {/* ログアウトボタン */}
+              <Link to="/article-list" className="ml-4 hover:bg-white py-2 px-5 font-bold rounded">
+                記事一覧
+              </Link>
+              <LogoutButton />
             </>
           ) : (
             <Link to="/login" className="ml-4 hover:underline">

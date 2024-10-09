@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 
 interface NotificationSettingsProps {
-  onNext: (data: any) => void;
-}
+    onNext: (data: any) => void;
+    onBack: () => void;
+  }
 
-const NotificationSettings: React.FC<NotificationSettingsProps> = ({ onNext }) => {
+const NotificationSettings: React.FC<NotificationSettingsProps> = ({ onNext, onBack }) => {
   const [emailNotifications, setEmailNotifications] = useState(false);
   const [snsNotifications, setSnsNotifications] = useState<string[]>([]);
 
@@ -71,7 +72,7 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ onNext }) =
           <div className="mt-6 flex justify-between">
             <button
               type="button"
-              onClick={() => onNext({})} // 戻る機能のため、空のデータを渡してステップを戻す
+              onClick={onBack} // 戻るボタンで onBack 関数を呼び出す
               className="bg-gray-300 text-gray-700 py-3 px-4 rounded-lg shadow-lg"
             >
               戻る
