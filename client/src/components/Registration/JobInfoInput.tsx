@@ -106,74 +106,115 @@ const JobInfoInput: React.FC<JobInfoInputProps> = ({ onNext }) => {
         { value: '輸血療法', label: '輸血療法' },
     ];
 
-    // 初期状態の定義
-    const initialState = {
-        isStudent: false, // 看護学生かどうかを管理
-        departments: [] as string[],
-        experienceYears: {} as { [key: string]: string },
-        certifiedNurseDetails: [] as string[],
-        specialistNurseDetails: [] as string[],
-        advancedNurseDetails: [] as string[],
-        errors: {} as { departments?: string; experienceYears?: string },
-        isAccordionOpen: {} as { [key: string]: boolean }, // アコーディオン開閉状態を管理
-        otherDepartment: '', // その他の診療科の入力
-    };
+  // 初期状態の定義
+  const initialState = {
+    isStudent: false,
+    departments: [] as string[],
+    experienceYears: {} as { [key: string]: string },
+    certifiedNurseDetails: [] as string[],
+    specialistNurseDetails: [] as string[],
+    advancedNurseDetails: [] as string[],
+    errors: {} as { departments?: string; experienceYears?: string },
+    isAccordionOpen: {
+      department: false,
+      certifiedNurse: false,
+      specialistNurse: false,
+      advancedNurse: false,
+    },
+    otherDepartment: '',
+  };
 
-    // リデューサー関数
-    function formReducer(state: typeof initialState, action: any) {
-        switch (action.type) {
-        case 'SET_FIELD':
-            return { ...state, [action.field]: action.value };
-        case 'SET_ERROR':
-            return { ...state, errors: { ...state.errors, [action.field]: action.error } };
-        case 'TOGGLE_ACCORDION':
-            return {
-            ...state,
-            isAccordionOpen: { ...state.isAccordionOpen, [action.field]: !state.isAccordionOpen[action.field] },
-            };
-        case 'SET_IS_STUDENT':
-            return { ...state, isStudent: action.value }; // 看護学生の状態を管理
-        default:
-            return state;
-        }
+  // アクションの型定義
+  type Action =
+    | { type: 'SET_FIELD'; field: keyof typeof initialState; value: any }
+    | { type: 'SET_ERROR'; field: keyof typeof initialState['errors']; error: string | null }
+    | { type: 'TOGGLE_ACCORDION'; field: keyof typeof initialState['isAccordionOpen'] }
+    | { type: 'SET_IS_STUDENT'; value: boolean };
+
+  // リデューサー関数
+  function formReducer(state: typeof initialState, action: Action) {
+    switch (action.type) {
+      case 'SET_FIELD':
+        return { ...state, [action.field]: action.value };
+      case 'SET_ERROR':
+        return {
+          ...state,
+          errors: { ...state.errors, [action.field]: action.error },
+        };
+      case 'TOGGLE_ACCORDION':
+        return {
+          ...state,
+          isAccordionOpen: {
+            ...state.isAccordionOpen,
+            [action.field]: !state.isAccordionOpen[action.field],
+          },
+        };
+      case 'SET_IS_STUDENT':
+        return { ...state, isStudent: action.value };
+      default:
+        return state;
     }
+  }
 
-    const [state, dispatch] = useReducer(formReducer, initialState);
+  const [state, dispatch] = useReducer(formReducer, initialState);
 
-    const validateDepartments = (departments: string[]): string | null => {
-        return departments.length === 0 ? '少なくとも1つの診療科を選択してください。' : null;
+  const validateDepartments = (departments: string[]): string | null => {
+    return departments.length === 0
+      ? '少なくとも1つの診療科を選択してください。'
+      : null;
+  };
+
+  const handleCheckboxChange = (
+    field:
+      | 'departments'
+      | 'certifiedNurseDetails'
+      | 'specialistNurseDetails'
+      | 'advancedNurseDetails',
+    value: string
+  ) => {
+    const currentValue = state[field];
+    if (Array.isArray(currentValue)) {
+      const updatedValue = currentValue.includes(value)
+        ? currentValue.filter((v: string) => v !== value)
+        : [...currentValue, value];
+      dispatch({ type: 'SET_FIELD', field, value: updatedValue });
+    }
+  };
+
+  const handleSelectChange =
+    (department: string) => (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const updatedExperienceYears = {
+        ...state.experienceYears,
+        [department]: e.target.value,
+      };
+      dispatch({
+        type: 'SET_FIELD',
+        field: 'experienceYears',
+        value: updatedExperienceYears,
+      });
     };
 
-    const handleCheckboxChange = (field: 'departments' | 'certifiedNurseDetails' | 'specialistNurseDetails' | 'advancedNurseDetails', value: string) => {
-        const currentValue = state[field];
-        if (Array.isArray(currentValue)) {
-        const updatedValue = currentValue.includes(value)
-            ? currentValue.filter((v: string) => v !== value)
-            : [...currentValue, value];
-        dispatch({ type: 'SET_FIELD', field, value: updatedValue });
-        }
-    };
+  const toggleAccordion = (
+    field: keyof typeof initialState['isAccordionOpen']
+  ) => {
+    dispatch({ type: 'TOGGLE_ACCORDION', field });
+  };
 
-    const handleSelectChange = (department: string) => (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const updatedExperienceYears = { ...state.experienceYears, [department]: e.target.value };
-        dispatch({ type: 'SET_FIELD', field: 'experienceYears', value: updatedExperienceYears });
-    };
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
 
-    const toggleAccordion = (field: keyof typeof initialState['isAccordionOpen']) => {
-        dispatch({ type: 'TOGGLE_ACCORDION', field });
-    };
+    if (!state.isStudent) {
+      const departmentsError = validateDepartments(state.departments);
+      dispatch({
+        type: 'SET_ERROR',
+        field: 'departments',
+        error: departmentsError,
+      });
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-
-        if (!state.isStudent) { // 看護学生でない場合のみバリデーションを実施
-        const departmentsError = validateDepartments(state.departments);
-        dispatch({ type: 'SET_ERROR', field: 'departments', error: departmentsError });
-
-        if (departmentsError) {
-            return; // エラーがある場合、送信処理を停止
-        }
-        }
+      if (departmentsError) {
+        return;
+      }
+    }
 
     // データをonNextで送信して次のステップへ
     onNext({
@@ -183,179 +224,235 @@ const JobInfoInput: React.FC<JobInfoInputProps> = ({ onNext }) => {
       certifiedNurseDetails: state.certifiedNurseDetails,
       specialistNurseDetails: state.specialistNurseDetails,
       advancedNurseDetails: state.advancedNurseDetails,
+      otherDepartment: state.otherDepartment,
     });
   };
 
-    return (
-        <div className="job-info-page flex justify-center items-center min-h-screen bg-blue-50 font-poppins">
-        <div className="w-full max-w-3xl p-8 bg-white rounded-lg shadow-md">
-            <h2 className="text-3xl font-bold mb-6 text-center text-blue-700">職務情報入力</h2>
+  return (
+    <div className="job-info-page flex justify-center items-center min-h-screen bg-blue-50 font-poppins">
+      <div className="w-full max-w-4xl p-8 bg-white rounded-lg shadow-md">
+        <h2 className="text-3xl font-bold mb-6 text-center text-blue-700">
+          職務情報入力
+        </h2>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-            {/* 看護学生かどうかのチェックボックス */}
-            <div className="mb-4">
-                <label className="flex items-center">
-                <input
-                    type="checkbox"
-                    checked={state.isStudent}
-                    onChange={(e) => dispatch({ type: 'SET_IS_STUDENT', value: e.target.checked })}
-                    className="mr-2"
-                />
-                私は看護学生です
-                </label>
-            </div>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* 看護学生かどうかのチェックボックス */}
+          <div className="mb-6">
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                checked={state.isStudent}
+                onChange={(e) =>
+                  dispatch({ type: 'SET_IS_STUDENT', value: e.target.checked })
+                }
+                className="mr-2 h-5 w-5 text-blue-600"
+              />
+              <span className="text-lg">私は看護学生です</span>
+            </label>
+          </div>
 
-            {/* 以下の項目は看護学生でない場合のみ表示 */}
-            {!state.isStudent && (
-                <>
-                {/* 診療科 */}
-                <div className="accordion-section mb-4 border-b-2 border-blue-300">
-                    <h3
-                    className="cursor-pointer font-bold text-blue-600 flex items-center justify-between"
-                    onClick={() => toggleAccordion('department')}
-                    >
-                    診療科の選択
-                    <span className="ml-2">{state.isAccordionOpen['department'] ? '▲' : '▼'}</span>
-                    </h3>
-                    {state.isAccordionOpen['department'] && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
-                        {departmentOptions.map((option) => (
-                        <label key={option.value} className="block">
-                            <input
+          {/* 以下の項目は看護学生でない場合のみ表示 */}
+          {!state.isStudent && (
+            <>
+              {/* 診療科 */}
+              <div className="accordion-section mb-6">
+                <h3
+                  className="cursor-pointer font-bold text-xl text-blue-600 flex items-center justify-between bg-blue-100 p-3 rounded-md"
+                  onClick={() => toggleAccordion('department')}
+                >
+                  診療科の選択
+                  <span>{state.isAccordionOpen['department'] ? '▲' : '▼'}</span>
+                </h3>
+                {state.isAccordionOpen['department'] && (
+                  <div className="mt-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {departmentOptions.map((option) => (
+                        <label key={option.value} className="flex items-center">
+                          <input
                             type="checkbox"
                             checked={state.departments.includes(option.value)}
-                            onChange={() => handleCheckboxChange('departments', option.value)}
-                            className="mr-2"
-                            />
-                            {option.label}
+                            onChange={() =>
+                              handleCheckboxChange('departments', option.value)
+                            }
+                            className="mr-2 h-4 w-4 text-blue-600"
+                          />
+                          {option.label}
                         </label>
-                        ))}
+                      ))}
                     </div>
-                    )}
-                    {state.errors.departments && <p className="text-red-500 text-sm mt-1">{state.errors.departments}</p>}
-                </div>
 
-                {/* その他の診療科入力 */}
-                {state.departments.includes('その他') && (
-                    <input
-                    type="text"
-                    value={state.otherDepartment || ''}
-                    onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'otherDepartment', value: e.target.value })}
-                    placeholder="その他の診療科を入力"
-                    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    />
+                    {/* その他の診療科入力 */}
+                    {state.departments.includes('その他') && (
+                      <input
+                        type="text"
+                        value={state.otherDepartment || ''}
+                        onChange={(e) =>
+                          dispatch({
+                            type: 'SET_FIELD',
+                            field: 'otherDepartment',
+                            value: e.target.value,
+                          })
+                        }
+                        placeholder="その他の診療科を入力"
+                        className="w-full mt-4 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                      />
+                    )}
+
+                    {/* エラーメッセージ */}
+                    {state.errors.departments && (
+                      <p className="text-red-500 text-sm mt-2">
+                        {state.errors.departments}
+                      </p>
+                    )}
+
+                    {/* 診療科の経験年数選択 */}
+                    {state.departments.map((department) => (
+                      <div key={department} className="mt-4">
+                        <label className="block text-gray-700 mb-2">
+                          {department} の経験年数
+                        </label>
+                        <select
+                          value={state.experienceYears[department] || ''}
+                          onChange={handleSelectChange(department)}
+                          className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        >
+                          <option value="">年数を選択</option>
+                          {experienceOptions.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ))}
+                  </div>
                 )}
+              </div>
 
-                {/* 診療科の経験年数選択 */}
-                {state.departments.map((department) => (
-                    <div key={department} className="mb-4">
-                    <label className="block text-gray-600">{department} の経験年数</label>
-                    <select
-                        value={state.experienceYears[department] || ''}
-                        onChange={handleSelectChange(department)}
-                        className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    >
-                        <option value="">年数を選択</option>
-                        {experienceOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                            {option.label}
-                        </option>
-                        ))}
-                    </select>
-                    </div>
-                ))}
-
-                {/* 認定看護師 */}
-                <div className="accordion-section mb-6 pb-4 border-b-2 border-blue-300">
-                    <h3
-                    className="cursor-pointer font-bold text-blue-600 flex items-center justify-between"
-                    onClick={() => toggleAccordion('certifiedNurse')}
-                    >
-                    認定看護師
-                    <span className="ml-2">{state.isAccordionOpen['certifiedNurse'] ? '▲' : '▼'}</span>
-                    </h3>
-                    {state.isAccordionOpen['certifiedNurse'] && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
-                        {certifiedNurseOptions.map((option) => (
-                        <label key={option.value} className="block">
-                            <input
+              {/* 認定看護師 */}
+              <div className="accordion-section mb-6">
+                <h3
+                  className="cursor-pointer font-bold text-xl text-blue-600 flex items-center justify-between bg-blue-100 p-3 rounded-md"
+                  onClick={() => toggleAccordion('certifiedNurse')}
+                >
+                  認定看護師
+                  <span>
+                    {state.isAccordionOpen['certifiedNurse'] ? '▲' : '▼'}
+                  </span>
+                </h3>
+                {state.isAccordionOpen['certifiedNurse'] && (
+                  <div className="mt-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {certifiedNurseOptions.map((option) => (
+                        <label key={option.value} className="flex items-center">
+                          <input
                             type="checkbox"
-                            checked={state.certifiedNurseDetails.includes(option.value)}
-                            onChange={() => handleCheckboxChange('certifiedNurseDetails', option.value)}
-                            className="mr-2"
-                            />
-                            {option.label}
+                            checked={state.certifiedNurseDetails.includes(
+                              option.value
+                            )}
+                            onChange={() =>
+                              handleCheckboxChange(
+                                'certifiedNurseDetails',
+                                option.value
+                              )
+                            }
+                            className="mr-2 h-4 w-4 text-blue-600"
+                          />
+                          {option.label}
                         </label>
-                        ))}
+                      ))}
                     </div>
-                    )}
-                </div>
+                  </div>
+                )}
+              </div>
 
-                {/* 専門看護師 */}
-                <div className="accordion-section mb-6 pb-4 border-b-2 border-blue-300">
-                    <h3
-                    className="cursor-pointer font-bold text-blue-600 flex items-center justify-between"
-                    onClick={() => toggleAccordion('specialistNurse')}
-                    >
-                    専門看護師
-                    <span className="ml-2">{state.isAccordionOpen['specialistNurse'] ? '▲' : '▼'}</span>
-                    </h3>
-                    {state.isAccordionOpen['specialistNurse'] && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
-                        {specialistNurseOptions.map((option) => (
-                        <label key={option.value} className="block">
-                            <input
+              {/* 専門看護師 */}
+              <div className="accordion-section mb-6">
+                <h3
+                  className="cursor-pointer font-bold text-xl text-blue-600 flex items-center justify-between bg-blue-100 p-3 rounded-md"
+                  onClick={() => toggleAccordion('specialistNurse')}
+                >
+                  専門看護師
+                  <span>
+                    {state.isAccordionOpen['specialistNurse'] ? '▲' : '▼'}
+                  </span>
+                </h3>
+                {state.isAccordionOpen['specialistNurse'] && (
+                  <div className="mt-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {specialistNurseOptions.map((option) => (
+                        <label key={option.value} className="flex items-center">
+                          <input
                             type="checkbox"
-                            checked={state.specialistNurseDetails.includes(option.value)}
-                            onChange={() => handleCheckboxChange('specialistNurseDetails', option.value)}
-                            className="mr-2"
-                            />
-                            {option.label}
+                            checked={state.specialistNurseDetails.includes(
+                              option.value
+                            )}
+                            onChange={() =>
+                              handleCheckboxChange(
+                                'specialistNurseDetails',
+                                option.value
+                              )
+                            }
+                            className="mr-2 h-4 w-4 text-blue-600"
+                          />
+                          {option.label}
                         </label>
-                        ))}
+                      ))}
                     </div>
-                    )}
-                </div>
+                  </div>
+                )}
+              </div>
 
-                {/* 特定行為研修修了看護師 */}
-                <div className="accordion-section mb-6 pb-4 border-b-2 border-blue-300">
-                    <h3
-                    className="cursor-pointer font-bold text-blue-600 flex items-center justify-between"
-                    onClick={() => toggleAccordion('advancedNurse')}
-                    >
-                    特定行為研修修了看護師
-                    <span className="ml-2">{state.isAccordionOpen['advancedNurse'] ? '▲' : '▼'}</span>
-                    </h3>
-                    {state.isAccordionOpen['advancedNurse'] && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
-                        {advancedNurseOptions.map((option) => (
-                        <label key={option.value} className="block">
-                            <input
+              {/* 特定行為研修修了看護師 */}
+              <div className="accordion-section mb-6">
+                <h3
+                  className="cursor-pointer font-bold text-xl text-blue-600 flex items-center justify-between bg-blue-100 p-3 rounded-md"
+                  onClick={() => toggleAccordion('advancedNurse')}
+                >
+                  特定行為研修修了看護師
+                  <span>
+                    {state.isAccordionOpen['advancedNurse'] ? '▲' : '▼'}
+                  </span>
+                </h3>
+                {state.isAccordionOpen['advancedNurse'] && (
+                  <div className="mt-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {advancedNurseOptions.map((option) => (
+                        <label key={option.value} className="flex items-center">
+                          <input
                             type="checkbox"
-                            checked={state.advancedNurseDetails.includes(option.value)}
-                            onChange={() => handleCheckboxChange('advancedNurseDetails', option.value)}
-                            className="mr-2"
-                            />
-                            {option.label}
+                            checked={state.advancedNurseDetails.includes(
+                              option.value
+                            )}
+                            onChange={() =>
+                              handleCheckboxChange(
+                                'advancedNurseDetails',
+                                option.value
+                              )
+                            }
+                            className="mr-2 h-4 w-4 text-blue-600"
+                          />
+                          {option.label}
                         </label>
-                        ))}
+                      ))}
                     </div>
-                    )}
-                </div>
-                </>
-            )}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
 
-            {/* ボタン */}
-            <button
-                type="submit"
-                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-3 px-4 rounded-lg shadow-lg transition duration-300 mt-6"
-            >
-                次へ
-            </button>
-            </form>
-        </div>
-        </div>
-    );
+          {/* ボタン */}
+          <button
+            type="submit"
+            className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-3 px-4 rounded-lg shadow-lg transition duration-300"
+          >
+            次へ
+          </button>
+        </form>
+      </div>
+    </div>
+  );
 };
 
 export default JobInfoInput;

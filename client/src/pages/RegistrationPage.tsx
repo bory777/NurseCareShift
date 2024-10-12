@@ -1,54 +1,122 @@
+// RegistrationPage.tsx
 import React, { useState } from 'react';
-import InitialRegistration from '../components/Registration/InitialRegistration'; // 初期登録ステップ
-import EmailVerification from '../components/Registration/EmailVerification'; // メール認証ステップ
-import DobInput from '../components/Registration/DobInput'; // 生年月日入力
-import JobInfoInput from '../components/Registration/JobInfoInput'; // 職務情報入力
-import NotificationSettings from '../components/Registration/NotificationSettings'; // 通知設定
-import ConfirmationPage from '../components/Registration/ConfirmationPage'; // 最終確認
+import { Routes, Route, useNavigate } from 'react-router-dom';
+import InitialRegistration from '../components/Registration/InitialRegistration';
+import EmailVerification from '../components/Registration/EmailVerification';
+import InitialStepTwo from '../components/Registration/InitialStepTwo';
+import DobInput from '../components/Registration/DobInput';
+import JobInfoInput from '../components/Registration/JobInfoInput';
+import NotificationSettings from '../components/Registration/NotificationSettings';
+import ConfirmationPage from '../components/Registration/ConfirmationPage';
+import PasswordReset from './PasswordReset';
+import PasswordResetRequest from './PasswordResetRequest';
 
-const RegistrationPage: React.FC = () => {
+interface RegistrationPageProps {
+  children?: React.ReactNode;
+}
+
+const RegistrationPage: React.FC<RegistrationPageProps> = ({ children }) => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     username: '',
+    userId: '',
     birthdate: '',
     gender: '',
-    departments: [],
-    experienceYears: {},
-    certifiedNurseDetails: [],
-    specialistNurseDetails: [],
-    advancedNurseDetails: [],
+    isStudent: false,
+    departments: [] as string[],
+    otherDepartment: '',
+    experienceYears: {} as { [key: string]: string },
+    certifiedNurseDetails: [] as string[],
+    specialistNurseDetails: [] as string[],
+    advancedNurseDetails: [] as string[],
     notificationSettings: {
       emailNotifications: false,
-      snsNotifications: [],
+      lineNotification: false,
     },
-    verificationCode: '', // 認証コード
+    verificationCode: '',
   });
 
-  const [step, setStep] = useState(1); // 現在のステップを管理
+  const navigate = useNavigate();
 
   // ステップ進行を管理する関数
-  const handleNext = (data?: any) => {
+  const handleNext = (data?: any, nextPath?: string) => {
     if (data) {
-      setFormData({ ...formData, ...data }); // データがある場合のみマージ
+      setFormData((prevData) => ({ ...prevData, ...data }));
     }
-    setStep(step + 1); // 次のステップへ進む
+    if (nextPath) {
+      navigate(nextPath);
+    } else {
+      navigate('step2');
+    }
   };
 
   // ステップを戻る関数
   const handleBack = () => {
-    setStep(step - 1); // ステップを1つ戻す
+    navigate(-1);
+  };
+
+  // パスワードリセット成功時の処理
+  const handleResetSuccess = () => {
+    navigate('/login');
+  };
+
+  // パスワードリセットリクエスト成功時の処理
+  const handleResetRequestSuccess = () => {
+    alert('パスワードリセットのメールを送信しました。メールを確認してください。');
+    navigate('/login');
   };
 
   return (
     <div>
-      {/* ステップごとにコンポーネントを表示 */}
-      {step === 1 && <InitialRegistration onNext={handleNext} />}
-      {step === 2 && <EmailVerification onNext={handleNext} />}
-      {step === 3 && <DobInput onNext={handleNext} />}
-      {step === 4 && <JobInfoInput onNext={handleNext} />}
-      {step === 5 && <NotificationSettings onNext={handleNext} onBack={handleBack} />}
-      {step === 6 && <ConfirmationPage onBack={handleBack} formData={formData} />}
+      {children ? (
+        // 子コンポーネントが提供された場合はそれを表示
+        children
+      ) : (
+        // そうでない場合は登録ページのルーティングを表示
+        <Routes>
+          <Route path="/" element={<InitialRegistration onNext={handleNext} />} />
+          <Route
+            path="email-verification"
+            element={
+              <EmailVerification onNext={handleNext} email={formData.email} />
+            }
+          />
+          <Route
+            path="initial-step-two"
+            element={<InitialStepTwo onNext={handleNext} />}
+          />
+          <Route path="dob-input" element={<DobInput onNext={handleNext} />} />
+          <Route path="job-info" element={<JobInfoInput onNext={handleNext} />} />
+          <Route
+            path="notification-settings"
+            element={
+              <NotificationSettings onNext={handleNext} onBack={handleBack} />
+            }
+          />
+          <Route
+            path="confirmation"
+            element={
+              <ConfirmationPage onBack={handleBack} formData={formData} />
+            }
+          />
+          {/* パスワードリセット関連ページ */}
+          <Route
+            path="password-reset-request"
+            element={
+              <PasswordResetRequest
+                onRequestSuccess={handleResetRequestSuccess}
+              />
+            }
+          />
+          <Route
+            path="password-reset"
+            element={<PasswordReset onResetSuccess={handleResetSuccess} />}
+          />
+          {/* その他のルート */}
+          <Route path="*" element={<InitialRegistration onNext={handleNext} />} />
+        </Routes>
+      )}
     </div>
   );
 };

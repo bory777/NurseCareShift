@@ -8,12 +8,14 @@
     "moduleResolution": "node",               // モジュール解決
     "esModuleInterop": true,                  // ESモジュールとCommonJSモジュールの互換性
     "skipLibCheck": true,                     // ライブラリ型チェックのスキップ
-    "forceConsistentCasingInFileNames": true  // ファイル名の大文字小文字の一貫性を強制
+    "forceConsistentCasingInFileNames": true,  // ファイル名の大文字小文字の一貫性を強制
+    "lib": ["ES2018", "DOM"]
   },
   "include": [
     "src/**/*.ts",
     "src/types/passport-apple.d.ts",
-    "src/types/express/index.d.ts"
-  ],
+    "src/types/express/index.d.ts",
+    "src/**/*", "csurf.d.ts"
+, "src/db.ts"  ],
   "exclude": ["node_modules"]                 // 除外するディレクトリ
 }

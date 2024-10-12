@@ -1,11 +1,24 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+// components/AuthContext.tsx
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import axios from 'axios';
+
+// ユーザーの型定義
+interface User {
+  id: number;
+  email: string;
+  name?: string;
+  bio?: string;
+  profileImage?: string;
+}
 
 // AuthContextの型定義
 interface AuthContextType {
+  user: User | null;
   token: string | null;
-  login: (token: string) => void;
-  logout: () => void;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  updateProfile: (data: any) => Promise<void>;
   isLoading: boolean; // 認証確認中かどうか
 }
 
@@ -24,6 +37,7 @@ export const useAuth = () => {
 // AuthProviderコンポーネント
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [token, setToken] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true); // 認証状態の確認中かどうか
   const navigate = useNavigate(); // リダイレクト用にuseNavigateを使う
   const location = useLocation(); // 現在のページを取得
@@ -31,40 +45,41 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // 認証が必要なページ（例: ダッシュボードなど）をリストアップ
   const protectedRoutes = ['/dashboard'];
 
+  // ユーザー情報を取得する関数
+  const fetchUser = async () => {
+    try {
+      const response = await axios.get('/api/user', { withCredentials: true });
+      setUser(response.data);
+      setToken('authenticated');
+    } catch (error) {
+      setUser(null);
+      setToken(null);
+    }
+  };
+
+  // ページの初回ロード時に認証チェックを実行
   useEffect(() => {
-    console.log("プロフィールデータを取得中");
     const checkAuth = async () => {
       setIsLoading(true); // 認証確認中
       try {
-        const response = await fetch('http://localhost:8000/api/check-auth', {
-          method: 'GET',
-          credentials: 'include', // HttpOnlyクッキーを含める
-        });
-
-        if (response.ok) {
-          // 認証成功の場合、トークンは保持しなくても認証状態をセット
-          setToken('authenticated');
+        const response = await axios.get('http://localhost:8000/api/check-auth', { withCredentials: true });
+        if (response.status === 200) {
+          await fetchUser();
         } else if (response.status === 401) {
-          // 認証失敗の場合、リフレッシュトークンを使ってアクセストークンを再発行
-          const refreshResponse = await fetch('http://localhost:8000/api/refresh-token', {
-            method: 'POST',
-            credentials: 'include',
-          });
-
-          if (refreshResponse.ok) {
-            // リフレッシュ成功、認証状態を維持
-            setToken('authenticated');
+          // リフレッシュトークンを使って再認証
+          const refreshResponse = await axios.post('http://localhost:8000/api/refresh-token', {}, { withCredentials: true });
+          if (refreshResponse.status === 200) {
+            await fetchUser();
           } else {
-            // リフレッシュ失敗時にのみ、認証が必要なページでリダイレクト
             setToken(null);
             if (protectedRoutes.includes(location.pathname)) {
               navigate('/login');
             }
           }
         }
-      } catch (err) {
-        console.log('認証チェックに失敗しました', err);
-        setToken(null); // エラーが発生した場合もログアウト状態にする
+      } catch (error) {
+        console.error('認証チェックに失敗しました', error);
+        setToken(null);
         if (protectedRoutes.includes(location.pathname)) {
           navigate('/login');
         }
@@ -73,36 +88,35 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     };
 
-    checkAuth(); // ページの初回ロード時に実行
-  }, []);
+    checkAuth();
+  }, [location.pathname, navigate]);
 
   // ログイン時の処理
-  const login = () => {
-    setToken('authenticated'); // サーバーからの応答が正しければ「authenticated」状態にセット
+  const login = async (email: string, password: string) => {
+    await axios.post('http://localhost:8000/api/login', { email, password }, { withCredentials: true });
+    await fetchUser();
   };
 
   // ログアウト時の処理
-  const logout = () => {
-    setToken(null); // ローカルでトークンをクリア
-    fetch('http://localhost:8000/api/logout', {
-      method: 'POST',
-      credentials: 'include', // クッキーを含めてリクエスト
-    })
-      .then((response) => {
-        if (response.ok) {
-          navigate('/'); // ログアウト後にホーム画面にリダイレクト
-        } else {
-          console.log('ログアウトに失敗しました');
-        }
-      })
-      .catch((error) => {
-        console.error('ログアウトエラー:', error);
-      });
+  const logout = async () => {
+    await axios.post('http://localhost:8000/api/logout', {}, { withCredentials: true });
+    setUser(null);
+    setToken(null);
+    navigate('/'); // ログアウト後にホーム画面にリダイレクト
+  };
+
+  // プロフィール更新
+  const updateProfile = async (data: any) => {
+    await axios.put('/api/account/profile', data, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      withCredentials: true,
+    });
+    await fetchUser(); // プロフィール更新後に最新のユーザー情報を取得
   };
 
   return (
-    <AuthContext.Provider value={{ token, login, logout, isLoading }}>
-      {isLoading ? <div>Loading...</div> : children} {/* ローディング中はメッセージ表示 */}
+    <AuthContext.Provider value={{ user, token, login, logout, updateProfile, isLoading }}>
+      {isLoading ? <div>Loading...</div> : children} {/* 認証中はローディング表示 */}
     </AuthContext.Provider>
   );
 };
